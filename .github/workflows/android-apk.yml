@@ -88,10 +88,10 @@ jobs:
       - name: Import project
         run: ~/godot/godot --headless --import
 
-      - name: Run gameplay smoke test
+      - name: Run gameplay tests
         run: |
-          timeout 180 ~/godot/godot --headless -- --test=30 | tee test.log
-          grep -q "TEST_RESULT PASS" test.log
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb > /dev/null
+          GODOT=~/godot/godot tools/run_tests.sh
 
       - name: Export debug APK
         run: |

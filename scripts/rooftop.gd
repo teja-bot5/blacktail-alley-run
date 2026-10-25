@@ -12,44 +12,53 @@ const WALLS := [
 ]
 const ROOF := Color(0.80, 0.73, 0.62)
 const DEPTH := 460.0
-# Obstacle sizes (px). "rug" is a hanging rug on a rope: slide under it.
+# Obstacles: visible size (px) and the one action that clears them.
+# Slide obstacles hang from ropes/cables, so their hitbox extends up to the
+# rope: they must be slid under, not jumped.
 const KINDS := {
-	"tank": Vector2(76, 96),
-	"crate": Vector2(64, 54),
-	"rug": Vector2(150, 128),
+	"crate": {"size": Vector2(66, 58), "act": "jump", "min_speed": 0.0},
+	"wall": {"size": Vector2(56, 76), "act": "jump", "min_speed": 0.0},
+	"rug": {"size": Vector2(124, 82), "act": "slide", "min_speed": 0.0},
+	"tank": {"size": Vector2(80, 98), "act": "jump", "min_speed": 500.0},
+	"cable": {"size": Vector2(104, 74), "act": "slide", "min_speed": 540.0},
+	"ac": {"size": Vector2(104, 72), "act": "jump", "min_speed": 600.0},
 }
-const RUG_CLEAR := 46.0  # gap under the rug
+const CLEAR := 46.0     # free height under slide obstacles
+const ROPE_TOP := -420.0
 
 var w := 800.0
-var obstacles: Array = []  # {kind, rect (local), hit}
+var gap_after := 0.0
+var obstacles: Array = []  # {kind, act, x, rect (hitbox, local), hit}
 var fish_spots: Array = []  # local positions
 var wall: Color
 var rng := RandomNumberGenerator.new()
 var _seed := 0
 
 
-func setup(width: float, seed_value: int, with_obstacles: bool) -> void:
+## speed: run speed when the cat will reach this roof (px/s).
+func setup(width: float, seed_value: int, with_obstacles: bool, speed := 430.0) -> void:
 	w = width
 	_seed = seed_value
 	rng.seed = seed_value
 	wall = WALLS[rng.randi() % WALLS.size()]
 	if with_obstacles:
-		var x := rng.randf_range(480.0, 640.0)
-		while x < w - 220.0:
-			var kind: String = ["tank", "crate", "rug"][rng.randi() % 3]
-			var s: Vector2 = KINDS[kind]
-			var r := Rect2(x, -s.y, s.x, s.y)
-			if kind == "rug":
-				r = Rect2(x + 12, -s.y + 8, s.x - 24, s.y - 8 - RUG_CLEAR)
-			obstacles.append({"kind": kind, "x": x, "rect": r, "hit": false})
-			# Fish arc over jumpable obstacles, low row under rugs.
-			for i in 3:
-				var fx := x + s.x * 0.5 + (i - 1) * 46.0
-				var fy := -24.0 if kind == "rug" else -s.y - 50.0 - (14.0 if i == 1 else 0.0)
-				fish_spots.append(Vector2(fx, fy))
-			x += s.x + rng.randf_range(380.0, 620.0)
+		var pool := []
+		for k in KINDS:
+			if speed >= KINDS[k].min_speed:
+				pool.append(k)
+		# Fairness: nothing where the cat can land after a gap jump (~0.7 s of
+		# travel) plus reaction time; spacing allows landing + reacting again.
+		var x := maxf(560.0, speed * 1.25) + rng.randf_range(0.0, 140.0)
+		while true:
+			var kind: String = pool[rng.randi() % pool.size()]
+			var k: Dictionary = KINDS[kind]
+			var sz: Vector2 = k.size
+			if x + sz.x + speed * 0.8 + 60.0 > w:
+				break
+			add_obstacle(kind, x)
+			x += sz.x + speed * 1.15 + rng.randf_range(0.0, 280.0)
 	var fx2 := 150.0
-	while fx2 < w - 120.0:
+	while fx2 < w - 200.0:
 		if _free(fx2, 60.0) and rng.randf() < 0.35:
 			for i in 4:
 				fish_spots.append(Vector2(fx2 + i * 44.0, -36.0))
@@ -58,9 +67,22 @@ func setup(width: float, seed_value: int, with_obstacles: bool) -> void:
 	queue_redraw()
 
 
+func add_obstacle(kind: String, x: float) -> void:
+	var k: Dictionary = KINDS[kind]
+	var sz: Vector2 = k.size
+	var hit := Rect2(x, -sz.y, sz.x, sz.y)
+	if k.act == "slide":
+		hit = Rect2(x, ROPE_TOP, sz.x, -CLEAR - ROPE_TOP)
+	obstacles.append({"kind": kind, "act": k.act, "x": x, "rect": hit, "hit": false})
+	for i in 3:  # fish trace the right line: arc over jumps, low under slides
+		var fx := x + sz.x * 0.5 + (i - 1) * 46.0
+		var fy := -22.0 if k.act == "slide" else -sz.y - 52.0 - (16.0 if i == 1 else 0.0)
+		fish_spots.append(Vector2(fx, fy))
+
+
 func _free(x: float, margin: float) -> bool:
 	for o in obstacles:
-		if x > o.x - margin - 180.0 and x < o.x + o.rect.size.x + margin + 40.0:
+		if x > o.x - margin - 180.0 and x < o.x + KINDS[o.kind].size.x + margin + 40.0:
 			return false
 	return true
 
@@ -68,6 +90,16 @@ func _free(x: float, margin: float) -> bool:
 func _draw() -> void:
 	rng.seed = _seed * 7919 + 13
 	var face := Rect2(0, 12, w, DEPTH)
+	if gap_after > 0.0:  # dark alley in the gap: the drop must be unmistakable
+		var gap := Rect2(w, 6, gap_after, DEPTH)
+		draw_polygon(Ink.rect_pts(gap), PackedColorArray([Color(0.1, 0.05, 0.04, 0.55), Color(0.1, 0.05, 0.04, 0.55), Color(0.06, 0.03, 0.03, 0.95), Color(0.06, 0.03, 0.03, 0.95)]))
+		for k in 3:
+			var y0 := 40.0 + k * 28.0
+			var wire := PackedVector2Array()
+			for i in 9:
+				var t := i / 8.0
+				wire.append(Vector2(w + gap_after * t, y0 + sin(t * PI) * 22.0))
+			draw_polyline(wire, Color(0.05, 0.03, 0.02, 0.8), 1.6, true)
 	Ink.vgrad(self, Rect2(0, 12, w, 300), wall.lightened(0.04), wall.darkened(0.42))
 	draw_rect(Rect2(0, 312, w, DEPTH - 300), wall.darkened(0.42))
 	Ink.plaster(self, rng, face.grow_individual(-4, 0, -4, -DEPTH + 260), wall)
@@ -83,6 +115,9 @@ func _draw() -> void:
 	Ink.box(self, rng, Rect2(-8, -5, w + 16, 24), ROOF)
 	draw_rect(Rect2(-6, 10, w + 12, 7), ROOF.darkened(0.22))
 	draw_line(Vector2(-4, -2), Vector2(w + 4, -2), ROOF.lightened(0.35), 2.0)
+	for ex in [-8.0, w + 8.0]:  # bright worn corners mark the roof edges
+		draw_line(Vector2(ex, -4), Vector2(ex, 18), ROOF.lightened(0.45), 3.0)
+		Ink.bricks(self, rng, Vector2(ex + (12.0 if ex < 0.0 else -12.0), 30), Vector2(16, 12), wall)
 	for i in int(w / 120.0):
 		var cx := rng.randf_range(10, w - 30)
 		draw_line(Vector2(cx, 1), Vector2(cx + rng.randf_range(8, 24), rng.randf_range(4, 11)), Color(Ink.LINE, 0.45), 1.2, true)
@@ -209,36 +244,112 @@ func _antenna(p: Vector2) -> void:
 		draw_line(p + Vector2(-half, y), p + Vector2(half, y), Ink.LINE, 2.0, true)
 
 
+func _base_shadow(x: float, wid: float) -> void:
+	draw_colored_polygon(Ink.ellipse(Vector2(x + wid * 0.5, 1), wid * 0.62, 6, 16), Color(0.15, 0.06, 0.03, 0.35))
+
+
 func _obstacle_tank(o: Dictionary) -> void:
 	var r: Rect2 = o.rect
-	Ink.box(self, rng, Rect2(r.position.x + 6, r.end.y - 22, r.size.x - 12, 22), Color(0.45, 0.4, 0.36), 2.4)
-	var body := Rect2(r.position.x, r.position.y + 10, r.size.x, r.size.y - 32)
-	Ink.vgrad(self, body, Color(0.2, 0.42, 0.72), Color(0.12, 0.26, 0.5))
-	Ink.line(self, rng, Ink.rect_pts(body), true, 3.0)
+	_base_shadow(r.position.x, r.size.x)
+	Ink.box(self, rng, Rect2(r.position.x + 6, r.end.y - 22, 8, 22), Color(0.3, 0.3, 0.32), 2.4)
+	Ink.box(self, rng, Rect2(r.end.x - 14, r.end.y - 22, 8, 22), Color(0.3, 0.3, 0.32), 2.4)
+	Ink.box(self, rng, Rect2(r.position.x + 2, r.end.y - 26, r.size.x - 4, 6), Color(0.36, 0.36, 0.38), 2.2)
+	var body := Rect2(r.position.x, r.position.y + 10, r.size.x, r.size.y - 36)
+	Ink.vgrad(self, body, Color(0.2, 0.42, 0.72), Color(0.11, 0.24, 0.48))
 	for k in 3:
-		var y := body.position.y + 14 + k * 18
-		draw_line(Vector2(body.position.x + 2, y), Vector2(body.end.x - 2, y), Color(0.08, 0.16, 0.35), 2.2)
-	draw_rect(Rect2(body.position.x + 8, body.position.y + 6, 7, body.size.y - 12), Color(0.55, 0.72, 0.92, 0.6))
-	Ink.poly(self, rng, Ink.ellipse(Vector2(r.get_center().x, r.position.y + 10), r.size.x * 0.5, 9, 18), Color(0.25, 0.5, 0.8), 2.6)
+		var y := body.position.y + 14 + k * 17
+		draw_line(Vector2(body.position.x + 2, y), Vector2(body.end.x - 2, y), Color(0.08, 0.16, 0.35), 2.4)
+	draw_rect(Rect2(body.position.x + 9, body.position.y + 6, 8, body.size.y - 12), Color(0.6, 0.76, 0.95, 0.6))
+	Ink.line(self, rng, Ink.rect_pts(body), true, 3.6)
+	Ink.poly(self, rng, Ink.ellipse(Vector2(r.get_center().x, r.position.y + 10), r.size.x * 0.5, 9, 18), Color(0.27, 0.52, 0.82), 3.2)
+	Ink.box(self, rng, Rect2(r.get_center().x - 9, r.position.y + 1, 18, 8), Color(0.15, 0.3, 0.55), 2.0)
 
 
 func _obstacle_crate(o: Dictionary) -> void:
 	var r: Rect2 = o.rect
-	Ink.box(self, rng, r, Color(0.6, 0.42, 0.26), 2.8)
-	for k in 3:
-		var y := r.position.y + 6 + k * 16
-		draw_line(Vector2(r.position.x + 3, y), Vector2(r.end.x - 3, y), Color(0.38, 0.24, 0.13), 2.0)
-	Ink.line(self, rng, Ink.pts([r.position + Vector2(4, 4), r.end - Vector2(4, 4)]), false, 2.0)
+	_base_shadow(r.position.x, r.size.x)
+	Ink.box(self, rng, r, Color(0.66, 0.46, 0.27), 3.6)
+	Ink.box(self, rng, r.grow(-7), Color(0.6, 0.41, 0.24), 2.0)
+	for k in 2:
+		var y := r.position.y + 20 + k * 16
+		draw_line(Vector2(r.position.x + 7, y), Vector2(r.end.x - 7, y), Color(0.38, 0.24, 0.13), 2.0)
+	Ink.line(self, rng, Ink.pts([r.position + Vector2(8, 8), r.end - Vector2(8, 8)]), false, 3.0)
+	for c in [r.position + Vector2(4, 4), Vector2(r.end.x - 4, r.position.y + 4), r.end - Vector2(4, 4), Vector2(r.position.x + 4, r.end.y - 4)]:
+		draw_circle(c, 2.2, Ink.LINE)
+
+
+func _obstacle_wall(o: Dictionary) -> void:
+	var r: Rect2 = o.rect
+	_base_shadow(r.position.x, r.size.x)
+	# Broken brick wall stub with a jagged (but nearly level) top.
+	var top := PackedVector2Array([Vector2(r.position.x, r.end.y), Vector2(r.position.x, r.position.y + 6)])
+	var steps := 5
+	for i in range(1, steps):
+		top.append(Vector2(r.position.x + r.size.x * i / steps, r.position.y + (0.0 if i % 2 else 7.0)))
+	top.append(Vector2(r.end.x, r.position.y + 4))
+	top.append(r.end)
+	draw_colored_polygon(top, Color(0.66, 0.31, 0.22))
+	var y := r.end.y - 10.0
+	var row := 0
+	while y > r.position.y + 6:
+		draw_line(Vector2(r.position.x + 1, y), Vector2(r.end.x - 1, y), Color(0.35, 0.15, 0.1), 1.6)
+		var xx := r.position.x + (9.0 if row % 2 else 0.0)
+		while xx < r.end.x:
+			draw_line(Vector2(xx, y), Vector2(xx, y + 10), Color(0.35, 0.15, 0.1), 1.4)
+			xx += 18.0
+		y -= 10.0
+		row += 1
+	Ink.box(self, rng, Rect2(r.position.x - 2, r.position.y + 30, r.size.x + 4, 18), wall.lightened(0.05), 2.0)
+	Ink.line(self, rng, top, true, 3.6)
+
+
+func _obstacle_ac(o: Dictionary) -> void:
+	var r: Rect2 = o.rect
+	_base_shadow(r.position.x, r.size.x)
+	for lx in [r.position.x + 8, r.end.x - 16]:
+		Ink.box(self, rng, Rect2(lx, r.end.y - 10, 8, 10), Color(0.3, 0.3, 0.32), 2.0)
+	var body := Rect2(r.position.x, r.position.y, r.size.x, r.size.y - 10)
+	Ink.box(self, rng, body, Color(0.9, 0.89, 0.84), 3.6)
+	var c := body.position + Vector2(36, body.size.y * 0.5)
+	draw_circle(c, 24, Color(0.28, 0.28, 0.3))
+	for k in 5:
+		var a := TAU * k / 5.0 + 0.3
+		draw_line(c, c + Vector2.from_angle(a) * 21, Color(0.78, 0.78, 0.75), 4.0)
+	draw_arc(c, 24, 0, TAU, 28, Ink.LINE, 2.6, true)
+	for k in 6:
+		draw_line(body.position + Vector2(70, 10 + k * 8), body.position + Vector2(98, 10 + k * 8), Color(0.5, 0.5, 0.48), 2.0)
+
+
+func _hang_line(x0: float, x1: float, low: float) -> PackedVector2Array:
+	var p := PackedVector2Array()
+	for i in 13:
+		var t := i / 12.0
+		p.append(Vector2(lerpf(x0, x1, t), low - (1.0 - sin(t * PI)) * 70.0))
+	return p
 
 
 func _obstacle_rug(o: Dictionary) -> void:
 	var x: float = o.x
-	var s: Vector2 = KINDS.rug
-	for px in [x, x + s.x]:
-		Ink.box(self, rng, Rect2(px - 4, -s.y - 6, 8, s.y + 6), Color(0.36, 0.24, 0.16), 2.2)
-	var rope := PackedVector2Array()
-	for i in 9:
-		var t := i / 8.0
-		rope.append(Vector2(x + s.x * t, -s.y + 4 + sin(t * PI) * 8))
-	draw_polyline(rope, Ink.LINE, 2.4, true)
-	_rug(Rect2(x + 14, -s.y + 10, s.x - 28, s.y - 10 - RUG_CLEAR - 9))
+	var sz: Vector2 = KINDS.rug.size
+	# Poles stand at the back edge of the roof (drawn muted = behind the cat).
+	for px in [x - 26.0, x + sz.x + 26.0]:
+		Ink.box(self, rng, Rect2(px - 4, -sz.y - CLEAR - 70, 8, sz.y + CLEAR + 70), Color(0.45, 0.36, 0.28), 1.6)
+	draw_polyline(_hang_line(x - 26.0, x + sz.x + 26.0, -sz.y - CLEAR - 4), Ink.LINE, 2.6, true)
+	_rug(Rect2(x, -sz.y - CLEAR, sz.x, sz.y - 9))
+
+
+func _obstacle_cable(o: Dictionary) -> void:
+	var x: float = o.x
+	var sz: Vector2 = KINDS.cable.size
+	# Low-sagging cable bundle from off-screen poles, with a shop sign hanging off it.
+	for k in 4:
+		var line := PackedVector2Array()
+		for i in 17:
+			var t := i / 16.0
+			line.append(Vector2(x - 260 + (sz.x + 520) * t, ROPE_TOP + 40 + k * 6 + sin(t * PI) * (-ROPE_TOP - sz.y - CLEAR - 36 + k * 3)))
+		draw_polyline(line, Ink.LINE, 2.6, true)
+	for sx in [x + 14, x + sz.x - 14]:
+		draw_line(Vector2(sx, -sz.y - CLEAR - 22), Vector2(sx, -sz.y - CLEAR), Ink.LINE, 2.0)
+	var board := Rect2(x, -sz.y - CLEAR, sz.x, sz.y)
+	Ink.box(self, rng, board, Color(0.95, 0.83, 0.42), 3.4)
+	Ink.squiggle(self, rng, board.grow(-8), Color(0.72, 0.16, 0.12), 3.4)
