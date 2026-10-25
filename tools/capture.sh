@@ -7,7 +7,7 @@ GODOT=${GODOT:-godot}
 FPS=30
 TMP=$(mktemp -d)
 cd "$(dirname "$0")/.."
-xvfb-run -a -s "-screen 0 720x1280x24" "$GODOT" --rendering-driver opengl3 --resolution 360x640 \
+xvfb-run -a -s "-screen 0 1280x720x24" "$GODOT" --rendering-driver opengl3 --resolution 1280x720 \
   --write-movie "$TMP/f.png" --fixed-fps $FPS --quit-after $((SECS * FPS)) -- --demo --cam="$CAM" "$@" \
   > "$TMP/log.txt" 2>&1 || true
 grep -E "SCRIPT ERROR|Parse Error" "$TMP/log.txt" && exit 1

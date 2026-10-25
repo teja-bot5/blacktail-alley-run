@@ -1,50 +1,48 @@
-# BLACKTAIL: ALLEY RUN (prototype)
+# BLACKTAIL: ALLEY RUN
 
-An offline 3D endless runner for Android about a black cat with amber eyes,
-racing across warm, hand-drawn South Asian rooftops. Built with Godot 4 + GDScript.
+A 2D side-scrolling rooftop endless runner for Android: a black cat with amber eyes
+racing across hand-drawn South Asian rooftops. Built with Godot 4 + GDScript.
 
-> **Status: cat-movement prototype.** This build exists to judge the cat's
-> animation before the full runner is built. The previous web game
-> ("RENT IS DUE") is preserved on the `legacy/rent-is-due` branch.
+> **Status: playable vertical slice.** The previous web game ("RENT IS DUE") is
+> preserved on the `legacy/rent-is-due` branch.
 
-## Try the prototype
-- **Swipe** ← → to switch lanes, ↑ to jump, ↓ to slide (arrow keys / WASD on desktop).
-- **SLOW-MO** plays at 0.3× so you can inspect the motion.
-- **CAMERA** cycles chase / side / front views.
-- **AUTO** lets the autopilot run the course hands-free.
+## How to play
+- The cat runs automatically from left to right.
+- **Jump:** tap the left side of the screen or the cat button. Hold for a higher jump.
+- **Slide:** swipe down or press the arrow button (slide under hanging rugs).
+- Collect fish; jump rooftop gaps, water tanks and crates. Three hearts; falling = game over.
+- Keyboard: ↑/W/Space jump, ↓/S slide, P pause, Enter restart.
 
 ## Get the APK from your phone
-1. Open the repository's **Actions** tab → **Build Blacktail Android APK** → **Run workflow**
-   (pick the branch you want to build).
-2. When the run is green, download the `blacktail-alley-run-debug-apk` artifact,
-   unzip it and open `blacktail-alley-run-debug.apk`.
+1. **Actions** tab → **Build Blacktail Android APK** → **Run workflow** (choose the branch).
+2. When the run is green, download `blacktail-alley-run-debug-apk`, unzip, install.
 
-It is a debug build signed with a throwaway key, for testing only.
+## Art direction
+`docs/art-reference.png` is the visual target (reference only, not shipped).
+All in-game art is drawn procedurally in code in a comic style — wobbly ink outlines,
+cracked plaster, exposed brick, water tanks, AC units, rugs, wires and layered parallax
+city (`scripts/ink.gd`, `rooftop.gd`, `backdrop.gd`). Painted PNG layers can replace a
+`Backdrop` kind or `Rooftop` facade later without touching gameplay.
 
-## How the cat moves
-The CC0 cat model only ships Idle and Walking clips, so `scripts/cat_rig.gd`
-generates all running-game motion procedurally on the model's 20-bone skeleton:
-a rotary-gallop gait with spine flex/extension, folding legs and planted paws,
-anticipation crouch, take-off/tuck/reach jump arcs, landing squash, belly slide,
-banked sharp turns with a C-curved spine, and a spring-driven tail that
-counter-balances turns and jumps. Eyes (with blinks and pupil dilation) are added in code.
+The cat is the CC0 Quaternius model animated procedurally (`scripts/cat_rig.gd`) and
+rendered live into the 2D scene from a side camera (`scripts/cat_view.gd`).
 
 ## Project layout
 ```
-project.godot, export_presets.cfg
+scenes/main.tscn   entry scene
+scripts/game.gd    runner physics, level generation, input, HUD wiring, autopilot test
+scripts/rooftop.gd runnable building + obstacles     scripts/backdrop.gd  parallax layers
+scripts/ink.gd     hand-drawn drawing helpers        scripts/hud.gd       HUD
+scripts/fish.gd    collectible                        scripts/cat_view.gd / cat_rig.gd  cat
 assets/cat/        Cat.fbx (CC0, Quaternius) + CREDITS.md
-scenes/            prototype.tscn
-scripts/           cat_rig.gd (procedural animation), cat_runner.gd (movement),
-                   world.gd (procedural rooftops), prototype.gd (camera, HUD, autopilot),
-                   pal.gd (palette + toon/outline materials)
-tools/             capture.sh (renders motion preview videos locally; not exported)
+tools/capture.sh   renders a gameplay video locally (not exported)
 ```
 
 ## Local commands (Godot 4.7.2)
 ```bash
 godot --headless --import
-godot --headless -- --test=20          # autopilot smoke test, prints TEST_RESULT
-godot -- --demo --cam=cycle             # watch the autopilot
+godot --headless -- --test=30   # autopilot run + forced death + restart; prints TEST_RESULT
+godot -- --demo                 # watch the autopilot
 ```
 
 ## Credits

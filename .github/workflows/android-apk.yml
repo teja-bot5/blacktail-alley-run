@@ -90,7 +90,7 @@ jobs:
 
       - name: Run gameplay smoke test
         run: |
-          timeout 180 ~/godot/godot --headless -- --test=20 | tee test.log
+          timeout 180 ~/godot/godot --headless -- --test=30 | tee test.log
           grep -q "TEST_RESULT PASS" test.log
 
       - name: Export debug APK

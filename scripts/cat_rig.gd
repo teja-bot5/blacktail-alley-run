@@ -94,7 +94,7 @@ func _add_eyes() -> void:
 	att.bone_name = BONES["head"]
 	sk.add_child(att)
 	var head_rest := sk.get_bone_global_rest(_idx["head"])
-	var iris := Pal.glow(Pal.AMBER, 0.9)
+	var iris := Pal.glow(Pal.AMBER, 1.6)
 	var pupil_mat := StandardMaterial3D.new()
 	pupil_mat.albedo_color = Color(0.02, 0.015, 0.01)
 	pupil_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -115,7 +115,7 @@ func _add_eyes() -> void:
 		sm.radial_segments = 16
 		sm.rings = 8
 		ball.mesh = sm
-		ball.scale = Vector3(0.6, 1.35, 1.1)
+		ball.scale = Vector3(0.85, 1.55, 1.3)
 		ball.material_override = iris
 		eye.add_child(ball)
 		var pupil := MeshInstance3D.new()
