@@ -1,6 +1,8 @@
-node_modules/
-dist/
-# Generated in CI by `npx cap add android`
-android/
+# Godot
+.godot/
+build/
+*.tmp
+# Dev captures
+tools/out/
 *.log
 .DS_Store
