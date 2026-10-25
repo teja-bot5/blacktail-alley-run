@@ -7,11 +7,14 @@ racing across hand-drawn South Asian rooftops. Built with Godot 4 + GDScript.
 > preserved on the `legacy/rent-is-due` branch.
 
 ## How to play
-- The cat runs automatically from left to right.
-- **Jump:** tap the left side of the screen or the cat button. Hold for a higher jump.
-- **Slide:** swipe down or press the arrow button (slide under hanging rugs).
-- Collect fish; jump rooftop gaps, water tanks and crates. Three hearts; falling = game over.
-- Keyboard: ↑/W/Space jump, ↓/S slide, P pause, Enter restart.
+- Press **PLAY**: the cat stands up from its rooftop perch and starts running.
+- **Jump:** tap anywhere (or the cat button). Every jump has the same arc.
+- **Slide:** swipe down or press the arrow button.
+- Jump: crates, broken walls, water tanks, AC units, rooftop gaps.
+  Slide: hanging rugs and low cable bundles with shop signs.
+- Three hearts; falling into a gap or running into a wall = game over.
+- **SOUND** button (home/pause/game-over screens): on → low → off.
+- Keyboard: ↑/W/Space jump, ↓/S slide, P pause, Enter play/restart.
 
 ## Get the APK from your phone
 1. **Actions** tab → **Build Blacktail Android APK** → **Run workflow** (choose the branch).
@@ -24,8 +27,10 @@ cracked plaster, exposed brick, water tanks, AC units, rugs, wires and layered p
 city (`scripts/ink.gd`, `rooftop.gd`, `backdrop.gd`). Painted PNG layers can replace a
 `Backdrop` kind or `Rooftop` facade later without touching gameplay.
 
-The cat is the CC0 Quaternius model animated procedurally (`scripts/cat_rig.gd`) and
-rendered live into the 2D scene from a side camera (`scripts/cat_view.gd`).
+The cat (`scripts/cat2d.gd`) is a procedurally drawn and animated 2D silhouette:
+planted-foot gallop, jump phases, slide and a sitting idle. All audio is
+synthesised at startup (`scripts/sfx.gd`) — no audio files.
+`cat_rig.gd`, `cat_view.gd`, `pal.gd` and `assets/cat/` are the earlier 3D cat, now unused.
 
 ## Project layout
 ```
@@ -41,7 +46,8 @@ tools/capture.sh   renders a gameplay video locally (not exported)
 ## Local commands (Godot 4.7.2)
 ```bash
 godot --headless --import
-godot --headless -- --test=30   # autopilot run + forced death + restart; prints TEST_RESULT
+tools/run_tests.sh              # every obstacle (jump/slide/none) at 2 speeds, gaps,
+                                # touch input (needs xvfb-run), endurance + restart
 godot -- --demo                 # watch the autopilot
 ```
 

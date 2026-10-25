@@ -56,7 +56,8 @@ func setup(width: float, seed_value: int, with_obstacles: bool, speed := 430.0) 
 			if x + sz.x + speed * 0.8 + 60.0 > w:
 				break
 			add_obstacle(kind, x)
-			x += sz.x + speed * 1.15 + rng.randf_range(0.0, 280.0)
+			# Denser (but never below the fair minimum) as speed rises.
+			x += sz.x + speed * 1.15 + rng.randf_range(0.0, lerpf(320.0, 60.0, clampf((speed - 430.0) / 300.0, 0.0, 1.0)))
 	var fx2 := 150.0
 	while fx2 < w - 200.0:
 		if _free(fx2, 60.0) and rng.randf() < 0.35:
@@ -210,6 +211,7 @@ func _sign(r: Rect2) -> void:
 
 
 func _decor() -> void:
+	_back_structures()
 	var x := rng.randf_range(40.0, 160.0)
 	while x < w - 60.0:
 		if _free(x, 30.0):
@@ -219,6 +221,40 @@ func _decor() -> void:
 				2: _antenna(Vector2(x, 0))
 				_: pass
 		x += rng.randf_range(140.0, 300.0)
+
+
+## Muted structures at the back edge of the roof (behind the cat, never collide):
+## a stair hut, a railing or a laundry line. Thin outlines + haze keep them
+## visually separate from obstacles.
+func _back_structures() -> void:
+	var muted := wall.lerp(Color(0.85, 0.82, 0.78), 0.35)
+	match rng.randi() % 4:
+		0:
+			var hw := rng.randf_range(150, 220)
+			var hx := rng.randf_range(40, maxf(60, w - hw - 40))
+			Ink.box(self, rng, Rect2(hx, -150, hw, 150), muted, 1.6)
+			Ink.box(self, rng, Rect2(hx - 8, -160, hw + 16, 12), muted.lightened(0.1), 1.6)
+			Ink.box(self, rng, Rect2(hx + hw * 0.6, -110, 46, 110), Color(0.36, 0.5, 0.52).lerp(muted, 0.3), 1.4)
+		1:
+			var y := -64.0
+			draw_line(Vector2(10, y), Vector2(w - 10, y), Color(0.3, 0.27, 0.25, 0.7), 2.4)
+			var px := 10.0
+			while px < w - 10:
+				draw_line(Vector2(px, y), Vector2(px, 0), Color(0.3, 0.27, 0.25, 0.55), 1.6)
+				px += 34.0
+		2:
+			var lx := rng.randf_range(30, w * 0.4)
+			var lw := minf(rng.randf_range(260, 420), w - lx - 30)
+			for px2 in [lx, lx + lw]:
+				draw_line(Vector2(px2, 0), Vector2(px2, -150), Color(0.35, 0.28, 0.22, 0.8), 3.0)
+			draw_line(Vector2(lx, -146), Vector2(lx + lw, -140), Color(0.2, 0.18, 0.16, 0.7), 1.4)
+			var cx := lx + 14
+			while cx < lx + lw - 30:
+				var cc: Color = [Color(0.85, 0.3, 0.25), Color(0.95, 0.92, 0.85), Color(0.3, 0.5, 0.72), Color(0.92, 0.72, 0.3)][rng.randi() % 4]
+				draw_rect(Rect2(cx, -142, rng.randf_range(18, 30), rng.randf_range(26, 44)), cc.lerp(muted, 0.35))
+				cx += rng.randf_range(30, 46)
+		_:
+			pass
 
 
 func _plant(p: Vector2) -> void:

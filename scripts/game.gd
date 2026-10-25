@@ -33,6 +33,8 @@ var next_top := 500.0
 
 var cat: Cat2D
 var dust: Dust
+var sfx: Sfx
+var sound_btn: Button
 var cam: Camera2D
 var world: Node2D
 var hud: Hud
@@ -94,7 +96,11 @@ func _ready() -> void:
 	add_child(world)
 	cat = Cat2D.new()
 	cat.process_mode = Node.PROCESS_MODE_PAUSABLE
-	cat.footfall.connect(func(p: Vector2): dust.puff(p, 1, 0.6))
+	sfx = Sfx.new()
+	add_child(sfx)
+	cat.footfall.connect(func(p: Vector2):
+		dust.puff(p, 1, 0.6)
+		sfx.play("step", -8.0, 0.12))
 	add_child(cat)
 	dust = Dust.new()
 	dust.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -160,6 +166,14 @@ func _build_ui() -> void:
 	play_btn.focus_mode = Control.FOCUS_NONE
 	play_btn.pressed.connect(_on_play)
 	overlay.add_child(play_btn)
+	sound_btn = Button.new()
+	sound_btn.text = "SOUND: ON"
+	sound_btn.add_theme_font_size_override("font_size", 28)
+	sound_btn.focus_mode = Control.FOCUS_NONE
+	sound_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	sound_btn.position += Vector2(-250, 24)
+	sound_btn.pressed.connect(func(): sound_btn.text = "SOUND: " + sfx.cycle_level())
+	overlay.add_child(sound_btn)
 
 
 func _label(parent: Control, size_px: int, col: Color, dy: float) -> Label:
@@ -409,6 +423,7 @@ func _physics_process(dt: float) -> void:
 			grounded = false
 			coyote = 0.0
 			stats.jumps += 1
+			sfx.play("jump", -6.0, 0.08)
 	if grounded:
 		if b == null:
 			grounded = false
@@ -427,6 +442,7 @@ func _physics_process(dt: float) -> void:
 			grounded = true
 			dust.puff(Vector2(x, y), 6, clampf(vy / 900.0, 0.6, 1.3))
 			_dip = clampf(vy / 1200.0, 0.3, 1.0) * 5.0
+			sfx.play("land", -4.0, 0.1)
 			vy = 0.0
 			if _last_building != null and b != _last_building:
 				stats.gaps += 1
@@ -461,6 +477,7 @@ func _collide() -> void:
 					invuln = 1.2
 					cat.flinch = 1.0
 					_shake = 1.0
+					sfx.play("hit")
 					if hearts <= 0:
 						_die("KNOCKED OUT!")
 						return
@@ -470,6 +487,7 @@ func _collide() -> void:
 			f.collected = true
 			fish += 1
 			stats.fish += 1
+			sfx.play("fish", -5.0, 0.05)
 	fish_nodes = fish_nodes.filter(func(f): return is_instance_valid(f) and f.position.x > x - 900.0)
 
 
@@ -478,6 +496,7 @@ func _die(reason: String) -> void:
 	state = "over"
 	stats.deaths += 1
 	_shake = 1.0
+	sfx.play("over")
 	if _score() > best:
 		best = _score()
 		var cfg := ConfigFile.new()
