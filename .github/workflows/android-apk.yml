@@ -93,21 +93,6 @@ jobs:
           timeout 180 ~/godot/godot --headless -- --test=20 | tee test.log
           grep -q "TEST_RESULT PASS" test.log
 
-      - name: Render motion preview
-        continue-on-error: true
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb > /dev/null
-          chmod +x tools/capture.sh
-          GODOT=~/godot/godot tools/capture.sh preview-cycle.mp4 cycle 16
-          GODOT=~/godot/godot tools/capture.sh preview-side-slowmo.mp4 side 10 --slowmo
-
-      - name: Upload motion preview
-        uses: actions/upload-artifact@v4
-        with:
-          name: blacktail-motion-preview
-          path: preview-*.mp4
-          if-no-files-found: warn
-
       - name: Export debug APK
         run: |
           mkdir -p build

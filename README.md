@@ -37,7 +37,7 @@ scenes/            prototype.tscn
 scripts/           cat_rig.gd (procedural animation), cat_runner.gd (movement),
                    world.gd (procedural rooftops), prototype.gd (camera, HUD, autopilot),
                    pal.gd (palette + toon/outline materials)
-tools/             capture.sh (renders motion preview videos; not exported)
+tools/             capture.sh (renders motion preview videos locally; not exported)
 ```
 
 ## Local commands (Godot 4.7.2)
