@@ -32,7 +32,7 @@ counter-balances turns and jumps. Eyes (with blinks and pupil dilation) are adde
 ## Project layout
 ```
 project.godot, export_presets.cfg
-assets/cat/        CREDITS.md (Cat.fbx, CC0 by Quaternius, is fetched by CI)
+assets/cat/        Cat.fbx (CC0, Quaternius) + CREDITS.md
 scenes/            prototype.tscn
 scripts/           cat_rig.gd (procedural animation), cat_runner.gd (movement),
                    world.gd (procedural rooftops), prototype.gd (camera, HUD, autopilot),
