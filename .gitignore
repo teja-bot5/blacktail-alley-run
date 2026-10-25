@@ -1,0 +1,6 @@
+node_modules/
+dist/
+# Generated in CI by `npx cap add android`
+android/
+*.log
+.DS_Store
