@@ -115,7 +115,7 @@ func _add_eyes() -> void:
 		sm.radial_segments = 16
 		sm.rings = 8
 		ball.mesh = sm
-		ball.scale = Vector3(0.55, 1.0, 0.8)
+		ball.scale = Vector3(0.6, 1.35, 1.1)
 		ball.material_override = iris
 		eye.add_child(ball)
 		var pupil := MeshInstance3D.new()
@@ -123,8 +123,8 @@ func _add_eyes() -> void:
 		pm.radius = 0.0011
 		pm.height = 0.0022
 		pupil.mesh = pm
-		pupil.position = Vector3(0.00035, 0, 0)
-		pupil.scale = Vector3(0.45, 0.22, 0.85)
+		pupil.position = Vector3(0.0005, 0, 0)
+		pupil.scale = Vector3(0.45, 0.3, 1.15)
 		pupil.material_override = pupil_mat
 		eye.add_child(pupil)
 		var glint := MeshInstance3D.new()
@@ -312,4 +312,4 @@ func _eyes_update(delta: float, w_air: float, w_slide: float, w_crouch: float) -
 	var dilate := 0.22 + 0.35 * w_air + 0.15 * flinch
 	for i in _eyes.size():
 		_eyes[i].scale = Vector3(1, 1, maxf(lid, 0.08))
-		_pupils[i].scale = Vector3(0.45, dilate, 0.85)
+		_pupils[i].scale = Vector3(0.45, dilate * 1.35, 1.15)

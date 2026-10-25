@@ -14,7 +14,7 @@ const WALLS := [
 	Color(0.74, 0.60, 0.46),  # dusty tan
 	Color(0.93, 0.80, 0.68),  # pale peach
 ]
-const ROOF := Color(0.71, 0.57, 0.45)
+const ROOF := Color(0.62, 0.44, 0.34)
 const BRICK := Color(0.62, 0.30, 0.22)
 const WOOD := Color(0.30, 0.20, 0.14)
 
@@ -32,7 +32,7 @@ static func dust() -> NoiseTexture2D:
 		n.frequency = 0.08
 		_dust.noise = n
 		var g := Gradient.new()
-		g.set_color(0, Color(0.82, 0.78, 0.74))
+		g.set_color(0, Color(0.72, 0.68, 0.64))
 		g.set_color(1, Color(1, 1, 1))
 		_dust.color_ramp = g
 	return _dust

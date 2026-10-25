@@ -24,7 +24,7 @@ var _btns := {}
 var _touch_start := Vector2.ZERO
 var _touching := false
 var _hit_ids := {}
-var _side_sign := -1.0
+var _steer_cd := 0.0
 
 
 func _ready() -> void:
@@ -69,7 +69,7 @@ func _setup_environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.9
+	env.ambient_light_energy = 0.45
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.92, 0.82, 0.70)
@@ -80,7 +80,7 @@ func _setup_environment() -> void:
 	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.light_color = Color(1.0, 0.90, 0.76)
-	sun.light_energy = 1.25
+	sun.light_energy = 0.8
 	sun.rotation_degrees = Vector3(-38, -35, 0)
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 18.0
@@ -170,7 +170,7 @@ func _act(a: String) -> void:
 			if runner.lane < 1: stats.lane_changes += 1
 			runner.move_lane(1)
 		"jump":
-			if runner.grounded: stats.jumps += 1
+			if runner.grounded and runner.jump_wait < 0.0: stats.jumps += 1
 			runner.jump()
 		"slide":
 			if not runner.is_sliding(): stats.slides += 1
@@ -179,6 +179,7 @@ func _act(a: String) -> void:
 
 func _physics_process(delta: float) -> void:
 	elapsed += delta
+	_steer_cd -= delta
 	world.update(runner.position.z)
 	if autopilot:
 		_autopilot()
@@ -207,13 +208,12 @@ func _place_camera(delta: float) -> void:
 	var look: Vector3
 	match CAMS[cam_mode]:
 		"CHASE":
-			pos = Vector3(p.x * 0.6, 0.85 + p.y * 0.45, p.z + 1.75)
-			look = Vector3(p.x * 0.8, 0.26 + p.y * 0.55, p.z - 1.3)
+			pos = Vector3(p.x * 0.75, 0.62 + p.y * 0.45, p.z + 1.15)
+			look = Vector3(p.x * 0.9, 0.24 + p.y * 0.55, p.z - 1.0)
 		"SIDE":
-			if absf(p.x) > 0.3:
-				_side_sign = -signf(p.x)
-			pos = Vector3(p.x + 1.25 * _side_sign, 0.32 + p.y * 0.6, p.z - 0.05)
-			look = p + Vector3(0, 0.2, 0)
+			# 3/4 rear-side view; stays inside the parapets so it never clips buildings.
+			pos = Vector3(p.x * 0.3 - 1.0, 0.42 + p.y * 0.6, p.z + 0.9)
+			look = p + Vector3(0, 0.2, -0.2)
 		"FRONT":
 			pos = p + Vector3(0.55, 0.42, -1.25)
 			pos.y = 0.42 + p.y * 0.5
@@ -258,6 +258,15 @@ func _autopilot() -> void:
 			"wall":
 				if d < 3.0: _dodge_to_free_lane()
 		return
+	if _steer_cd > 0.0:
+		return
+	# Demo: steer into jump/slide obstacles so the run shows those moves.
+	for o in world.obstacles:
+		var d: float = p.z - o.z
+		if o.kind != "wall" and d > 3.0 and d < 8.0 and o.lane != runner.lane and _lane_clear(o.lane, 3.0):
+			_act("right" if o.lane > runner.lane else "left")
+			_steer_cd = 0.5
+			return
 	# Chase the nearest fish ahead if its lane is clear.
 	var best = null
 	for f in world.fish:
@@ -266,6 +275,7 @@ func _autopilot() -> void:
 			best = f
 	if best != null and best.lane != runner.lane and _lane_clear(best.lane, 4.0):
 		_act("right" if best.lane > runner.lane else "left")
+		_steer_cd = 0.5
 
 
 func _dodge_to_free_lane() -> void:

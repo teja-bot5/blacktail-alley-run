@@ -40,7 +40,7 @@ func _build_chunk(z0: float, first: bool) -> void:
 	chunks.append(c)
 	var mid := -CHUNK / 2.0
 	# Roof slab + seam
-	Pal.box(c, Vector3(3.0, 0.4, CHUNK), Vector3(0, -0.2, mid), Pal.ROOF.lerp(Pal.WALLS[rng.randi() % 3], 0.25), false)
+	Pal.box(c, Vector3(3.0, 0.4, CHUNK), Vector3(0, -0.2, mid), Pal.ROOF.lerp(Pal.WALLS[rng.randi() % 3], 0.12), false)
 	Pal.box(c, Vector3(3.0, 0.02, 0.08), Vector3(0, 0.005, -0.05), Pal.ROOF.darkened(0.3), false)
 	for s in [-1.0, 1.0]:
 		var wall_col: Color = Pal.WALLS[rng.randi() % Pal.WALLS.size()]
