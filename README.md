@@ -1,55 +1,117 @@
-# BLACKTAIL: ALLEY RUN
+# BLACKTAIL — Alley Run
 
-A 2D side-scrolling rooftop endless runner for Android: a black cat with amber eyes
-racing across hand-drawn South Asian rooftops. Built with Godot 4 + GDScript.
+An offline 2D side-scrolling endless runner for Android. You are a black cat with
+amber eyes, racing left to right across hand-drawn Indian rooftops: leap the gaps
+between buildings, clear rooftop clutter, slide under hanging rugs and cables, and
+collect fish. Built with Godot 4 and GDScript.
 
-> **Status: playable vertical slice.** The previous web game ("RENT IS DUE") is
-> preserved on the `legacy/rent-is-due` branch.
+Maintained by [teja-bot5](https://github.com/teja-bot5).
 
-## How to play
-- Press **PLAY**: the cat stands up from its rooftop perch and starts running.
-- **Jump:** tap anywhere (or the cat button). Every jump has the same arc.
-- **Slide:** swipe down or press the arrow button.
-- Jump: crates, broken walls, water tanks, AC units, rooftop gaps.
-  Slide: hanging rugs and low cable bundles with shop signs.
-- Three hearts; falling into a gap or running into a wall = game over.
-- **SOUND** button (home/pause/game-over screens): on → low → off.
-- Keyboard: ↑/W/Space jump, ↓/S slide, P pause, Enter play/restart.
+## Features
+- Procedurally drawn and animated cat: planted-foot gallop, crouch–takeoff–tuck–landing
+  jumps, belly slide, and a sitting idle on the home screen.
+- Comic-style city drawn entirely in code: ink outlines, cracked plaster, exposed brick,
+  water tanks, AC units, rugs, wires with birds and layered parallax backgrounds.
+- Obstacles with one clear answer each — **jump:** crates, broken walls, water tanks,
+  AC units and rooftop gaps; **slide:** hanging rugs and low cable bundles with signs.
+- Fair, endless generation: speed and obstacle variety ramp up gradually, and nothing
+  is placed where the cat lands after a gap.
+- Three hearts, fish counter, score, saved best score, instant restart.
+- Synthesised sound effects, ambience and music (no audio files), with an on/low/off control.
+- Works fully offline.
 
-## Get the APK from your phone
-1. **Actions** tab → **Build Blacktail Android APK** → **Run workflow** (choose the branch).
-2. When the run is green, download `blacktail-alley-run-debug-apk`, unzip, install.
+## Controls
+**Touch**
+- **PLAY** on the home screen starts the run.
+- **Jump:** tap anywhere, or press the cat button (bottom right). Every jump has the same arc.
+- **Slide:** swipe down, or press the arrow button (bottom right).
+- **Pause:** the pause button (top right).
+- **SOUND** (home, pause and game-over screens) cycles on → low → off.
 
-## Art direction
-`docs/art-reference.png` is the visual target (reference only, not shipped).
-All in-game art is drawn procedurally in code in a comic style — wobbly ink outlines,
-cracked plaster, exposed brick, water tanks, AC units, rugs, wires and layered parallax
-city (`scripts/ink.gd`, `rooftop.gd`, `backdrop.gd`). Painted PNG layers can replace a
-`Backdrop` kind or `Rooftop` facade later without touching gameplay.
+**Keyboard** (desktop)
+- ↑ / W / Space: jump (also starts or restarts a run)
+- ↓ / S: slide
+- P / Esc: pause / resume
+- Enter: play, resume or restart
 
-The cat (`scripts/cat2d.gd`) is a procedurally drawn and animated 2D silhouette:
-planted-foot gallop, jump phases, slide and a sitting idle. All audio is
-synthesised at startup (`scripts/sfx.gd`) — no audio files.
-`cat_rig.gd`, `cat_view.gd`, `pal.gd` and `assets/cat/` are the earlier 3D cat, now unused.
+## Get the Android build
+The GitHub Actions workflow **Build Blacktail Android APK** (`.github/workflows/android-apk.yml`)
+runs the automated tests and exports a debug APK. It runs on pushes to `main` and can be
+started manually:
 
-## Project layout
-```
-scenes/main.tscn   entry scene
-scripts/game.gd    runner physics, level generation, input, HUD wiring, autopilot test
-scripts/rooftop.gd runnable building + obstacles     scripts/backdrop.gd  parallax layers
-scripts/ink.gd     hand-drawn drawing helpers        scripts/hud.gd       HUD
-scripts/fish.gd    collectible                        scripts/cat_view.gd / cat_rig.gd  cat
-assets/cat/        Cat.fbx (CC0, Quaternius) + CREDITS.md
-tools/capture.sh   renders a gameplay video locally (not exported)
-```
+1. Open the repository's **Actions** tab → **Build Blacktail Android APK** → **Run workflow**
+   and choose a branch.
+2. When the run finishes successfully, download the **`blacktail-alley-run-debug-apk`**
+   artifact (you must be signed in to GitHub).
+3. Unzip it and open `blacktail-alley-run-debug.apk` on your Android device. You may need
+   to allow installing apps from your browser or file manager.
 
-## Local commands (Godot 4.7.2)
+This is a debug build signed with a throwaway key, intended for testing — not a Play Store release.
+
+## Developer setup
+Requirements: [Godot 4.7.2](https://godotengine.org/download/) (standard build).
+`xvfb-run` is needed for the touch-input test; `xvfb-run` and `ffmpeg` for `tools/capture.sh`.
+
 ```bash
-godot --headless --import
-tools/run_tests.sh              # every obstacle (jump/slide/none) at 2 speeds, gaps,
-                                # touch input (needs xvfb-run), endurance + restart
-godot -- --demo                 # watch the autopilot
+godot --headless --import                  # import assets once
+godot                                      # run the game (scenes/main.tscn)
+godot -- --demo                            # watch the autopilot play
+GODOT=/path/to/godot tools/run_tests.sh    # all automated tests
 ```
 
-## Credits
-Cat model: "Animal Pack Vol.2" by Quaternius, CC0 — see `assets/cat/CREDITS.md`.
+`tools/run_tests.sh` runs every obstacle type with and without the correct action at
+two speeds, rooftop gaps, a touch-input test (PLAY, tap, swipe, on-screen buttons) and an
+endurance run that ends in game over and restart. It prints `ALL TESTS PASS` on success.
+
+**Android export.** The workflow shows the full, working setup: Java 17, Android SDK
+(`platform-tools`, `build-tools;34.0.0`, `platforms;android-34`), Godot 4.7.2 Android
+export templates and a debug keystore configured in Godot's editor settings. Then:
+
+```bash
+godot --headless --export-debug "Android" build/blacktail-alley-run-debug.apk
+```
+
+## Project structure
+```
+project.godot, export_presets.cfg   Godot project + Android export preset
+scenes/main.tscn                    entry scene
+scripts/game.gd                     game states, physics, level generation, input, tests
+scripts/cat2d.gd                    procedurally drawn + animated cat
+scripts/rooftop.gd                  runnable building, obstacles, gaps
+scripts/backdrop.gd                 parallax city layers
+scripts/ink.gd                      hand-drawn drawing helpers
+scripts/hud.gd, title_logo.gd       HUD; home-screen title, ribbon and best-score sign
+scripts/fish.gd, dust.gd, sfx.gd    collectible, dust puffs, synthesised audio
+scripts/cat_rig.gd, cat_view.gd,    earlier 3D cat prototype (no longer used by the game)
+  pal.gd, assets/cat/
+assets/fonts/                       Teko Bold font + OFL licence
+tools/                              run_tests.sh, capture.sh, cat_sheet.gd (dev only, not exported)
+docs/art-reference.png              visual reference (not exported)
+```
+
+## Known limitations
+- Debug APK only; no signed release build yet.
+- Not yet tested across a range of physical Android devices.
+- The sound setting resets on each launch (only the best score is saved).
+- All art is procedural vector drawing; it follows the reference style but is not painted artwork.
+
+## Contributing & issues
+Bug reports and suggestions are welcome via
+[GitHub Issues](https://github.com/teja-bot5/rent-is-due/issues) — please include your
+device model, Android version and steps to reproduce. For pull requests, keep changes
+focused and run `tools/run_tests.sh` before submitting.
+
+## License
+The project's code is released under the [MIT License](LICENSE). Third-party material
+keeps its own license and is **not** covered by MIT:
+- **Teko** font — © 2023 The Teko Project Authors, SIL Open Font License 1.1
+  (`assets/fonts/OFL.txt`), via the `@fontsource/teko` package.
+- **Cat model** (earlier 3D prototype) — "Animal Pack Vol.2" by Quaternius, CC0
+  (`assets/cat/CREDITS.md`).
+- `docs/art-reference.png` is a concept reference image only. It is not part of the game
+  and is not licensed under MIT (it shows third-party brand names).
+
+## Attribution
+BLACKTAIL is maintained by teja-bot5. Much of the code and documentation was written with
+the help of Claude Code (Anthropic's AI coding assistant) at the maintainer's direction;
+the commit history records this.

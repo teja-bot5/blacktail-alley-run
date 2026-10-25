@@ -40,6 +40,7 @@ var world: Node2D
 var hud: Hud
 var overlay: Control
 var shade: ColorRect
+var logo: TitleLogo
 var title_lbl: Label
 var sub_lbl: Label
 var play_btn: Button
@@ -144,8 +145,12 @@ func _build_ui() -> void:
 	overlay.add_child(shade)
 	title_lbl = _label(overlay, 120, Color(1, 0.74, 0.15), -170)
 	sub_lbl = _label(overlay, 34, Color(1, 0.97, 0.9), -40)
+	logo = TitleLogo.new()
+	logo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(logo)
 	play_btn = Button.new()
-	play_btn.add_theme_font_size_override("font_size", 48)
+	play_btn.add_theme_font_override("font", TitleLogo.FONT)
+	play_btn.add_theme_font_size_override("font_size", 64)
 	play_btn.add_theme_color_override("font_color", Ink.LINE)
 	play_btn.add_theme_color_override("font_hover_color", Ink.LINE)
 	play_btn.add_theme_color_override("font_pressed_color", Ink.LINE)
@@ -165,6 +170,7 @@ func _build_ui() -> void:
 		play_btn.add_theme_stylebox_override(st, sb)
 	play_btn.focus_mode = Control.FOCUS_NONE
 	play_btn.pressed.connect(_on_play)
+	play_btn.draw.connect(_draw_play_tail)
 	overlay.add_child(play_btn)
 	sound_btn = Button.new()
 	sound_btn.text = "SOUND: ON"
@@ -245,10 +251,13 @@ func _show_overlay() -> void:
 	hud.show_controls = state == "run"
 	hud.visible = state != "title"
 	shade.color = Color(0.12, 0.06, 0.03, 0.12 if state == "title" else 0.5)
+	logo.visible = state == "title"
+	title_lbl.visible = state != "title"
+	sub_lbl.visible = state != "title"
+	logo.best = best
+	logo.queue_redraw()
 	match state:
 		"title":
-			title_lbl.text = "BLACKTAIL"
-			sub_lbl.text = "ALLEY RUN\nBest %d" % best
 			play_btn.text = "PLAY"
 		"paused":
 			title_lbl.text = "PAUSED"
@@ -261,6 +270,19 @@ func _show_overlay() -> void:
 	play_btn.reset_size()
 	var vs := get_viewport_rect().size
 	play_btn.position = Vector2((vs.x - play_btn.size.x) * 0.5, vs.y * 0.5 + (150.0 if state == "title" else 120.0))
+
+
+## Small curled cat tail hooked over the button's right edge (purely decorative).
+func _draw_play_tail() -> void:
+	var r := Rect2(Vector2.ZERO, play_btn.size)
+	var o := Vector2(r.end.x - 16, r.end.y - 10)
+	var p := PackedVector2Array()
+	for i in 12:
+		var t := i / 11.0
+		var a := lerpf(0.4, -2.9, t)
+		p.append(o + Vector2(12, -18) + Vector2(cos(a), sin(a)) * lerpf(18.0, 9.0, t))
+	play_btn.draw_polyline(p, Ink.LINE, 9.0, true)
+	play_btn.draw_polyline(p, Color(0.05, 0.048, 0.055), 5.0, true)
 
 
 func _distance() -> int:
