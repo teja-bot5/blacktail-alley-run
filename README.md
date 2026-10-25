@@ -85,7 +85,8 @@ scripts/fish.gd, dust.gd, sfx.gd    collectible, dust puffs, synthesised audio
 scripts/cat_rig.gd, cat_view.gd,    earlier 3D cat prototype (no longer used by the game)
   pal.gd, assets/cat/
 assets/fonts/                       Teko Bold font + OFL licence
-tools/                              run_tests.sh, capture.sh, cat_sheet.gd (dev only, not exported)
+icon.png, icons/                    app icon + Android launcher/adaptive icons
+tools/                              run_tests.sh, capture.sh, cat_sheet.gd, make_icon.gd (dev only, not exported)
 docs/art-reference.png              visual reference (not exported)
 ```
 
@@ -97,7 +98,7 @@ docs/art-reference.png              visual reference (not exported)
 
 ## Contributing & issues
 Bug reports and suggestions are welcome via
-[GitHub Issues](https://github.com/teja-bot5/rent-is-due/issues) — please include your
+[GitHub Issues](../../issues) — please include your
 device model, Android version and steps to reproduce. For pull requests, keep changes
 focused and run `tools/run_tests.sh` before submitting.
 
