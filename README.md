@@ -1,54 +1,51 @@
-# RENT IS DUE
+# BLACKTAIL: ALLEY RUN (prototype)
 
-A portrait-first 2D dark-comedy endless arcade-management game. Manage one absurd apartment floor at a time, balance cash and chaos, and see how long you can keep your landlord licence.
+An offline 3D endless runner for Android about a black cat with amber eyes,
+racing across warm, hand-drawn South Asian rooftops. Built with Godot 4 + GDScript.
 
-## Features
-- Minimal-vector style built from HTML/CSS/SVG-like shapes
-- Four tenants: ghost, vampire, worm and chicken
-- Data-driven events with choices and consequences
-- Timed emergency events and untimed ordinary complaints
-- Endless floor progression, cash and chaos failure conditions
-- Local best-floor and best-score records
-- Vite web build, Vitest rules tests, Capacitor Android wrapper
-- GitHub Actions workflow that produces a debug APK artifact
+> **Status: cat-movement prototype.** This build exists to judge the cat's
+> animation before the full runner is built. The previous web game
+> ("RENT IS DUE") is preserved on the `legacy/rent-is-due` branch.
 
-## Requirements
-Node.js 20+ and npm. Android Studio is not required to build the APK through GitHub Actions.
+## Try the prototype
+- **Swipe** ← → to switch lanes, ↑ to jump, ↓ to slide (arrow keys / WASD on desktop).
+- **SLOW-MO** plays at 0.3× so you can inspect the motion.
+- **CAMERA** cycles chase / side / front views.
+- **AUTO** lets the autopilot run the course hands-free.
 
-## Run locally
-```bash
-npm ci
-npm test
-npm run dev
+## Get the APK from your phone
+1. Open the repository's **Actions** tab → **Build Blacktail Android APK** → **Run workflow**
+   (pick the branch you want to build).
+2. When the run is green, download the `blacktail-alley-run-debug-apk` artifact,
+   unzip it and open `blacktail-alley-run-debug.apk`.
+
+It is a debug build signed with a throwaway key, for testing only.
+
+## How the cat moves
+The CC0 cat model only ships Idle and Walking clips, so `scripts/cat_rig.gd`
+generates all running-game motion procedurally on the model's 20-bone skeleton:
+a rotary-gallop gait with spine flex/extension, folding legs and planted paws,
+anticipation crouch, take-off/tuck/reach jump arcs, landing squash, belly slide,
+banked sharp turns with a C-curved spine, and a spring-driven tail that
+counter-balances turns and jumps. Eyes (with blinks and pupil dilation) are added in code.
+
+## Project layout
 ```
-Open the URL Vite prints. On a phone, the device and development computer must be on the same network if using a local dev server.
-
-## Build the web version
-```bash
-npm run build
+project.godot, export_presets.cfg
+assets/cat/        CREDITS.md (Cat.fbx, CC0 by Quaternius, is fetched by CI)
+scenes/            prototype.tscn
+scripts/           cat_rig.gd (procedural animation), cat_runner.gd (movement),
+                   world.gd (procedural rooftops), prototype.gd (camera, HUD, autopilot),
+                   pal.gd (palette + toon/outline materials)
+tools/             capture.sh (renders motion preview videos; not exported)
 ```
 
-## Build Android locally (optional)
+## Local commands (Godot 4.7.2)
 ```bash
-npm ci
-npm run build
-npx cap add android
-npx cap sync android
+godot --headless --import
+godot --headless -- --test=20          # autopilot smoke test, prints TEST_RESULT
+godot -- --demo --cam=cycle             # watch the autopilot
 ```
-Then build `android/app` with Android Studio or Gradle on a machine with the Android SDK configured.
 
-## Download an APK using GitHub Actions from your phone
-1. Create a GitHub repository and upload/push all files in this project.
-2. Open the repository's **Actions** tab.
-3. Select **Build RENT IS DUE Android APK** and tap **Run workflow**. The workflow also runs on pushes to `main`.
-4. Open the completed run. If it fails, open the failed step's logs and fix that issue before retrying.
-5. Under **Artifacts**, download `rent-is-due-debug-apk` and extract the ZIP to obtain `app-debug.apk`.
-6. Open the APK on Android to install it. You may need to allow installs from the browser or file manager you used.
-
-The workflow creates a debug APK for testing, not a signed Play Store release. The repository and APK are not created automatically by this project ZIP; you must upload the project and run the workflow.
-
-## Notes
-- The game is offline after it loads; fonts are imported from Google Fonts and fall back to system fonts if unavailable.
-- Records are stored in the WebView/browser local storage.
-- Emergency events pause when the app is hidden. A timed emergency is resolved once per event.
-- This is an MVP scaffold; adjust event balance and expand tenant/event variety after play-testing.
+## Credits
+Cat model: "Animal Pack Vol.2" by Quaternius, CC0 — see `assets/cat/CREDITS.md`.
